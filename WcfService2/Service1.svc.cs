@@ -5,6 +5,7 @@ using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
+using System.Runtime.Caching;
 
 namespace WcfService2
 {
@@ -81,11 +82,25 @@ namespace WcfService2
 
         string IRedPill.ReverseWords(string s)
         {
+          var cache = MemoryCache.Default;
+          var reversedString = cache[s.GetHashCode().ToString()] as string;
+          if (reversedString != null)
+          {
+            return reversedString;
+          }
+
             string res = "";
 
             string[] str = s.Split(' ');
             Array.Reverse(str);
             res = string.Join(" ", str);
+
+            var cacheExpirationPeriod = 2;
+            var cacheItemPolicy = new CacheItemPolicy
+            {
+              AbsoluteExpiration = DateTime.Now.AddMinutes(cacheExpirationPeriod)
+            };
+            cache.Set(s.GetHashCode().ToString(), res, cacheItemPolicy);
 
             return res;
         }
